@@ -33,10 +33,10 @@ public class App {
         }
     }
 
-    private static void Consumer(String topic, int partition){
+    private static void Consumer(String topic, int connectionCount){
         KafkaConnector connector = KafkaConnector.create("localhost:29092,localhost:39092,localhost:49092");
 
-        for (int i = 0; i < partition; i++){
+        for (int i = 0; i < connectionCount; i++){
             connector.setConsumer(topic, i);
             KafkaConsumer consumer = connector.getConsumer(topic, i);
             consumer.subscribe(Collections.singletonList("sentence"));

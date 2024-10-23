@@ -3,8 +3,12 @@
  */
 package com.main.source;
 
+import java.util.Collections;
 import java.util.List;
 
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+
+import com.main.source.kafka.ConsumerThread;
 import com.main.source.kafka.KafkaConnector;
 import com.main.source.utils.FileReaderUtil;
 
@@ -26,6 +30,18 @@ public class App {
                 index = (index + 1) % sentences.size();    // 인덱스 증가, 끝에 도달하면 다시 0으로
             } catch (InterruptedException e) {
             }
+        }
+    }
+
+    private static void Consumer(String topic, int partition){
+        KafkaConnector connector = KafkaConnector.create("localhost:29092,localhost:39092,localhost:49092");
+
+        for (int i = 0; i < partition; i++){
+            connector.setConsumer(topic, i);
+            KafkaConsumer consumer = connector.getConsumer(topic, i);
+            consumer.subscribe(Collections.singletonList("sentence"));
+            Thread thread = new Thread(new ConsumerThread(consumer));
+            thread.start();
         }
     }
 }

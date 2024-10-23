@@ -11,23 +11,29 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 
 public class KafkaConnector{
-    private final Properties properties;
+    private final Properties consumerProperties;
     private final KafkaProducer<String, String> producer;
     private final HashMap<String, KafkaConsumer<String, String>> consumers;
     
-    private KafkaConnector(Properties properties){
-        this.properties = properties;
-        this.producer = new KafkaProducer<>(properties);
+    private KafkaConnector(Properties producerProperties, Properties consumerProperties){
+        this.consumerProperties = consumerProperties;
+        this.producer = new KafkaProducer<>(producerProperties);
         this.consumers = new HashMap<>();
     }
 
     public static KafkaConnector create(String domain){
-        Properties properties = new Properties();
-        properties.put("bootstrap.servers", domain); // Kafka 서버 주소
-        properties.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        properties.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        Properties producerProperties = new Properties();
+        producerProperties.put("bootstrap.servers", domain); // Kafka 서버 주소
+        producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
-        return new KafkaConnector(properties);
+        Properties consumerProperties = new Properties();
+        consumerProperties.put("bootstrap.servers", domain); // Kafka 서버 주소
+        consumerProperties.put("group.id", "my-consumer-group");
+        consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+
+        return new KafkaConnector(producerProperties, consumerProperties);
     }
 
     public Boolean send(String topic, String key, String value){
@@ -48,14 +54,15 @@ public class KafkaConnector{
         }
     }
 
-    public void setConsumer(String topic){
-        if (!consumers.containsKey(topic)){
-            consumers.put(topic, new KafkaConsumer<>(properties));
+    public void setConsumer(String topic, int partition){
+        if (!consumers.containsKey(topic + "_" + partition)){
+            consumerProperties.setProperty("group.id", topic + "_" + partition);
+            consumers.put(topic + "_" + partition, new KafkaConsumer<>(consumerProperties));
         }
     }
 
-    public KafkaConsumer<String,String> getConsumer(String topic){
-        return consumers.get(topic);
+    public KafkaConsumer<String,String> getConsumer(String topic, int partition){
+        return consumers.get(topic + "_" + partition);
     }
 
     public void dispose(){

@@ -3,12 +3,29 @@
  */
 package com.main.source;
 
+import java.util.List;
+
+import com.main.source.kafka.KafkaConnector;
+import com.main.source.utils.FileReaderUtil;
+
 public class App {
-    public String getGreeting() {
-        return "Hello World!";
+    public static void main(String[] args) {
+        Producer("1");
     }
 
-    public static void main(String[] args) {
-        System.out.println(new App().getGreeting());
+    private static void Producer(String key){
+        List<String> sentences = FileReaderUtil.readSentencesFromResources("random_sentences.txt");
+
+        KafkaConnector connector = KafkaConnector.create("localhost:29092,localhost:39092,localhost:49092");
+
+        int index = 0;
+        while (true) {  // 무한 루프
+            try {
+                Thread.sleep(1000);  // 1초 대기
+                connector.send("sentence", key, sentences.get(index));
+                index = (index + 1) % sentences.size();    // 인덱스 증가, 끝에 도달하면 다시 0으로
+            } catch (InterruptedException e) {
+            }
+        }
     }
 }

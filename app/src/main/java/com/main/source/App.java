@@ -14,11 +14,13 @@ import com.main.source.utils.FileReaderUtil;
 
 public class App {
     public static void main(String[] args) {
-        Producer("1");
+        Producer();
     }
 
-    private static void Producer(String key){
+    private static void Producer(){
         List<String> sentences = FileReaderUtil.readSentencesFromResources("random_sentences.txt");
+
+        String[] keys = {"a01", "b02", "c03", "40d"};
 
         KafkaConnector connector = KafkaConnector.create("localhost:29092,localhost:39092,localhost:49092");
 
@@ -26,8 +28,11 @@ public class App {
         while (true) {  // 무한 루프
             try {
                 Thread.sleep(1000);  // 1초 대기
+
+                String key = keys[(int) (Math.random() * keys.length)];
                 connector.send("sentence", key, sentences.get(index));
                 index = (index + 1) % sentences.size();    // 인덱스 증가, 끝에 도달하면 다시 0으로
+                
             } catch (InterruptedException e) {
             }
         }
